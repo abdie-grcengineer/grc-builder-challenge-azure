@@ -71,6 +71,18 @@ Same controls, different resources.
 
 The shape of the work is identical. Find the resources, wire them up.
 
+## On Azure?
+
+Same controls again, mapped to the `azurerm` provider. The bucket becomes a storage account.
+
+- `azurerm_storage_account` encrypts at rest by default with Microsoft-managed keys (AES-256), and it cannot be turned off. That covers SC-28; your attestation output surfaces that the account exists with default encryption in effect.
+- `allow_nested_items_to_be_public = false` on the storage account blocks anonymous public access to blobs and containers. That covers AC-3.
+- A `blob_properties { versioning_enabled = true }` block covers CM-6 part one.
+- Azure has no provider-level `default_tags` equivalent, so define one `locals` map with the four tags and reference it in the `tags` argument of every resource. That covers CM-6 part two.
+- `azurerm_monitor_diagnostic_setting` on the blob service, sending StorageRead, StorageWrite, and StorageDelete logs to a Log Analytics workspace or a second storage account, covers AU-3 and AU-6.
+
+Storage account names are globally unique like S3 bucket names, 3 to 24 lowercase letters and numbers only, so keep the random suffix. And you will need an `azurerm_resource_group` to hold everything, which AWS and GCP do not make you think about.
+
 ## Tear it down
 
 Versioned buckets will not destroy while they hold object versions. Empty first, then destroy.
