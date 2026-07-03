@@ -1,10 +1,14 @@
 # Week 1: One Storage Account, Five Controls
 
+The GRC Engineering Builder Challenge is six weekly builds, each one harder than the last, starting with a single cloud resource that satisfies real NIST 800-53 controls and ending with a full pipeline that generates its own compliance evidence. Every week ships a working artifact straight to your portfolio, so by the end you have six public proofs that you can turn a written control into running infrastructure.
+
 You have spent enough time treating spreadsheets like controls. This week ends that. You are going to write Terraform for a single cloud storage account that satisfies five NIST 800-53 controls and produces machine-readable proof of every one. No screenshots, no narrative, just code you wrote and the evidence it generates.
 
 This is brick one of the pipeline. Everything in the next five weeks reads, gates, signs, or maps what you build today. So build it yourself. Do not copy a module off the internet. The skill you are after is being able to look at a control and express it as infrastructure.
 
 Starter code: the [starter/](starter/) folder next to this file. It gives you the project shape, a resource group, and two empty storage accounts so the project validates. The controls are yours to add. The starter is a runway, not the plane.
+
+My completed build lives in [solution/](solution/), with the evidence committed alongside it. Do the work in the starter first; the solution is there to compare against, not to copy from.
 
 ## What you are building
 
