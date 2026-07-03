@@ -2,6 +2,8 @@
 
 The GRC Engineering Builder Challenge is six weekly builds, each one harder than the last, starting with a single cloud resource that satisfies real NIST 800-53 controls and ending with a full pipeline that generates its own compliance evidence. Every week ships a working artifact straight to your portfolio, so by the end you have six public proofs that you can turn a written control into running infrastructure.
 
+Want in? Clone this repo, open the [starter/](starter/) folder, and build week 1 yourself. Everything you need is here: the brief below, the starter code, and a verify script that tells you when you've met all five controls. It costs under a cent in an Azure sandbox and takes under an hour.
+
 You have spent enough time treating spreadsheets like controls. This week ends that. You are going to write Terraform for a single cloud storage account that satisfies five NIST 800-53 controls and produces machine-readable proof of every one. No screenshots, no narrative, just code you wrote and the evidence it generates.
 
 This is brick one of the pipeline. Everything in the next five weeks reads, gates, signs, or maps what you build today. So build it yourself. Do not copy a module off the internet. The skill you are after is being able to look at a control and express it as infrastructure.
