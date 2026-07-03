@@ -4,7 +4,7 @@ You have spent enough time treating spreadsheets like controls. This week ends t
 
 This is brick one of the pipeline. Everything in the next five weeks reads, gates, signs, or maps what you build today. So build it yourself. Do not copy a module off the internet. The skill you are after is being able to look at a control and express it as infrastructure.
 
-Starter code: download `week-1-starter.zip` attached to this post. It gives you the project shape, a resource group, and two empty storage accounts so the project validates. The controls are yours to add. The starter is a runway, not the plane.
+Starter code: the [starter/](starter/) folder next to this file. It gives you the project shape, a resource group, and two empty storage accounts so the project validates. The controls are yours to add. The starter is a runway, not the plane.
 
 ## What you are building
 
