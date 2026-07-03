@@ -60,28 +60,6 @@ If you applied, also capture state and run the checks.
 
 `verify.sh` in the starter runs the three live checks for you.
 
-## On AWS?
-
-Same controls, different resources.
-
-- `aws_s3_bucket_server_side_encryption_configuration` with AES-256 covers SC-28
-- `aws_s3_bucket_public_access_block` with all four flags true covers AC-3
-- `aws_s3_bucket_versioning` covers CM-6, and the provider `default_tags` block covers the tags
-- `aws_s3_bucket_logging` covers AU-3, after ownership controls and a log-delivery-write ACL on the log bucket
-
-The shape of the work is identical. Find the resources, wire them up.
-
-## On GCP?
-
-Same controls, different resources.
-
-- `google_storage_bucket` with `uniform_bucket_level_access = true` covers AC-3
-- A `versioning { enabled = true }` block covers CM-6, Google-managed or KMS encryption covers SC-28
-- A `logging` block covers AU-3
-- Use `labels` instead of tags for CM-6.
-
-The shape of the work is identical. Find the resources, wire them up.
-
 ## Tear it down
 
 `terraform destroy` removes the resource group and everything in it, blobs included. No need to empty anything first. Just make sure you are in the right subscription before you run it.
