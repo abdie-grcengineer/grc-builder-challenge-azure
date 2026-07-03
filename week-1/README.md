@@ -1,64 +1,75 @@
-# Week 1: One Bucket, Five Controls
+# Week 1: One Storage Account, Five Controls
 
-You have spent enough time treating spreadsheets like controls. This week ends that. You are going to write Terraform for a single cloud storage bucket that satisfies five NIST 800-53 controls and produces machine-readable proof of every one. No screenshots, no narrative, just code you wrote and the evidence it generates.
+You have spent enough time treating spreadsheets like controls. This week ends that. You are going to write Terraform for a single cloud storage account that satisfies five NIST 800-53 controls and produces machine-readable proof of every one. No screenshots, no narrative, just code you wrote and the evidence it generates.
 
 This is brick one of the pipeline. Everything in the next five weeks reads, gates, signs, or maps what you build today. So build it yourself. Do not copy a module off the internet. The skill you are after is being able to look at a control and express it as infrastructure.
 
-Starter code: download `week-1-starter.zip` attached to this post. It gives you the project shape and two empty buckets so the project validates. The controls are yours to add. The starter is a runway, not the plane.
+Starter code: download `week-1-starter.zip` attached to this post. It gives you the project shape, a resource group, and two empty storage accounts so the project validates. The controls are yours to add. The starter is a runway, not the plane.
 
 ## What you are building
 
-One primary bucket holds data. A separate log bucket receives its access logs. Both enforce the same baseline. Here are the five controls and what each one means in practice. Your job is to find the right AWS resources in the Terraform registry and wire them up.
+One primary storage account holds data. A separate log storage account receives its access logs. Both enforce the same baseline. Here are the five controls and what each one means in practice. Your job is to find the right `azurerm` resources in the Terraform registry and wire them up.
 
-**SC-28, protection of information at rest.** The primary bucket must encrypt objects by default. The log bucket too. Server-side encryption with AES-256 is enough for this week.
+**SC-28, protection of information at rest.** The primary account must encrypt objects at rest. The log account too. Azure encrypts every storage account with Microsoft-managed keys (AES-256) by default and will not let you turn it off, so your job is to surface that fact as machine-readable proof rather than to enable it.
 
-**AC-3, access enforcement.** Public access must be blocked on all four vectors. AWS exposes four separate flags for this, and all four have to be true. Three is not enough. They are four independent doors.
+**AC-3, access enforcement.** Anonymous public access must be blocked at the account level. Azure exposes this as one flag, `allow_nested_items_to_be_public`, and it must be false on both accounts so no container or blob can ever be opened to the internet.
 
-**CM-6, configuration settings, part one.** Versioning on the primary bucket, so prior object states are recoverable and auditable.
+**CM-6, configuration settings, part one.** Blob versioning on the primary account, so prior object states are recoverable and auditable.
 
-**CM-6, configuration settings, part two.** Four required tags on every taggable resource: Project, Environment, ManagedBy, ComplianceScope. The clean way to do this is the provider `default_tags` block, so you cannot forget them on a new resource.
+**CM-6, configuration settings, part two.** Four required tags on every taggable resource: Project, Environment, ManagedBy, ComplianceScope. The `azurerm` provider has no `default_tags` block, so the clean way to do this is one `locals` tag map referenced in the `tags` argument of every resource, so you cannot forget them on a new one.
 
-**AU-3 and AU-6, audit record content and review.** The primary bucket logs access to the dedicated log bucket. The log bucket needs ownership controls set so it can accept a log-delivery ACL before logging will work.
+**AU-3 and AU-6, audit record content and review.** The primary account logs blob access to the dedicated log account. On Azure that is a diagnostic setting, and it attaches to the blob service inside the account, not to the account itself.
 
-That last one is the only fiddly part. Access logging needs the destination bucket to allow the S3 log delivery group to write to it, and on modern AWS that means setting object ownership first, then the ACL, then pointing logging at it. Sequence matters. If you get an AccessDenied, that is why.
+That last one is the only fiddly part. The diagnostic setting has to target the blob sub-resource, which means pointing it at `<storage account id>/blobServices/default` and enabling the StorageRead, StorageWrite, and StorageDelete log categories. Scope matters. If your diagnostic setting deploys but no logs ever arrive, that is why.
 
 ## Prerequisites
 
-- An AWS account with permission to create S3 buckets. A sandbox account is easiest.
+- An Azure subscription with permission to create resource groups and storage accounts. A sandbox subscription is easiest.
 - Terraform 1.6 or newer. Check with `terraform version`.
-- AWS CLI v2 with a working profile. If you use SSO, export credentials first: `eval "$(aws configure export-credentials --profile <your-profile> --format env)"`.
+- Azure CLI with a working login. Run `az login` and confirm the right subscription with `az account show`.
 - 30 to 45 minutes.
 
 ## Cost
 
-Under one cent if you destroy the same day. Empty S3 buckets have no idle cost. You can also stay plan-only and never create anything.
+Under one cent if you destroy the same day. Empty storage accounts have no idle cost. You can also stay plan-only and never create anything.
 
 The evidence you need comes from `terraform plan`. If you want the full experience, apply, verify, and then run the cleanup at the bottom.
 
 ## Build it
 
-The starter has `main.tf`, `variables.tf`, and `outputs.tf` with the provider, a random suffix, and the two buckets already declared. Open `main.tf` and work through the TODOs. For each control:
+The starter has `main.tf`, `variables.tf`, and `outputs.tf` with the provider, a random suffix, the resource group, and the two storage accounts already declared. Open `main.tf` and work through the TODOs. For each control:
 
-- Find the AWS provider resource that implements it. The Terraform registry page for the `aws` provider is your reference. Search the resource name, read the example, write your version.
-- Wire it to the right bucket. Encryption, versioning, and the public access block each attach to a bucket by id.
-- For tags, add the `default_tags` block to the provider so all four tags apply everywhere automatically.
-- For logging, set ownership controls on the log bucket, give it a log-delivery-write ACL, then add the logging resource on the primary pointing at the log bucket.
+- Find the `azurerm` resource or argument that implements it. The Terraform registry page for the `azurerm` provider is your reference. Search the resource name, read the example, write your version.
+- Wire it to the right account. Public access and versioning are arguments on the storage account itself. The diagnostic setting is its own resource that points at the primary account's blob service by id.
+- For tags, define the four-tag map once in `locals` and reference it on the resource group and both accounts.
+- For logging, add the diagnostic setting on the primary account's blob service, enable the three Storage log categories, and target the log account.
 
-Then add the SC-28 attestation output: surface the encryption algorithm in effect as a Terraform output. That one value is your proof of encryption in machine-readable form.
+Then add the SC-28 attestation output: surface the encryption key source in effect as a Terraform output. That one value is your proof of encryption in machine-readable form.
 
 ## Run it and capture evidence
 
-Open `evidence/plan.json` and find your bucket. You should see the encryption rule (SC-28), the four-flag public access block all true (AC-3), the four tags (CM-6), and the logging block (AU-3). That JSON is your evidence. Hold onto it. Week 2 reads it.
+Open `evidence/plan.json` and find your storage account. You should see the encryption in effect (SC-28), `allow_nested_items_to_be_public` false on both accounts (AC-3), versioning enabled and the four tags (CM-6), and the diagnostic setting with its log categories (AU-3). That JSON is your evidence. Hold onto it. Week 2 reads it.
 
 If you applied, also capture state and run the checks.
 
 ## Done when
 
 - `terraform validate` passes.
-- `evidence/plan.json` contains all five controls: the encryption rule, the four-flag public access block, versioning enabled, the four tags, and the logging target.
-- If you applied, `verify.sh` shows AES256, versioning Enabled, and all four public-access flags true.
+- `evidence/plan.json` contains all five controls: the encryption attestation, public access blocked on both accounts, versioning enabled, the four tags, and the diagnostic setting target.
+- If you applied, `verify.sh` shows encryption with Microsoft-managed keys, versioning enabled, and public blob access false.
 
 `verify.sh` in the starter runs the three live checks for you.
+
+## On AWS?
+
+Same controls, different resources.
+
+- `aws_s3_bucket_server_side_encryption_configuration` with AES-256 covers SC-28
+- `aws_s3_bucket_public_access_block` with all four flags true covers AC-3
+- `aws_s3_bucket_versioning` covers CM-6, and the provider `default_tags` block covers the tags
+- `aws_s3_bucket_logging` covers AU-3, after ownership controls and a log-delivery-write ACL on the log bucket
+
+The shape of the work is identical. Find the resources, wire them up.
 
 ## On GCP?
 
@@ -71,27 +82,15 @@ Same controls, different resources.
 
 The shape of the work is identical. Find the resources, wire them up.
 
-## On Azure?
-
-Same controls again, mapped to the `azurerm` provider. The bucket becomes a storage account.
-
-- `azurerm_storage_account` encrypts at rest by default with Microsoft-managed keys (AES-256), and it cannot be turned off. That covers SC-28; your attestation output surfaces that the account exists with default encryption in effect.
-- `allow_nested_items_to_be_public = false` on the storage account blocks anonymous public access to blobs and containers. That covers AC-3.
-- A `blob_properties { versioning_enabled = true }` block covers CM-6 part one.
-- Azure has no provider-level `default_tags` equivalent, so define one `locals` map with the four tags and reference it in the `tags` argument of every resource. That covers CM-6 part two.
-- `azurerm_monitor_diagnostic_setting` on the blob service, sending StorageRead, StorageWrite, and StorageDelete logs to a Log Analytics workspace or a second storage account, covers AU-3 and AU-6.
-
-Storage account names are globally unique like S3 bucket names, 3 to 24 lowercase letters and numbers only, so keep the random suffix. And you will need an `azurerm_resource_group` to hold everything, which AWS and GCP do not make you think about.
-
 ## Tear it down
 
-Versioned buckets will not destroy while they hold object versions. Empty first, then destroy.
+`terraform destroy` removes the resource group and everything in it, blobs included. No need to empty anything first. Just make sure you are in the right subscription before you run it.
 
 ## Make it a portfolio piece
 
 Add a new project to your portfolio this week. Keep it short and concrete:
 
-- A one-paragraph writeup: "This Terraform module enforces SC-28, AC-3, CM-6, and AU-3 on a cloud storage bucket and emits the proof as JSON." Name the controls. Naming controls is the whole skill.
+- A one-paragraph writeup: "This Terraform module enforces SC-28, AC-3, CM-6, and AU-3 on a cloud storage account and emits the proof as JSON." Name the controls. Naming controls is the whole skill.
 - Your `main.tf`, `variables.tf`, `outputs.tf` in a public repo.
 - The `evidence/plan.json` committed alongside it.
 - A README that says what it enforces and how to verify it.
@@ -100,9 +99,9 @@ Then post on LinkedIn. Tag GRC Engineering Club, use #GRCEngClubChallenge, and s
 
 ## Common snags
 
-- **BucketAlreadyExists.** S3 names are globally unique. The `random_id` suffix prevents this. If you hardcoded a name, change it.
-- **AccessDenied on the log bucket.** The log-delivery-write ACL needs object ownership controls set first. Sequence the ownership controls before the ACL.
-- **SSO credential errors from Terraform.** Run the `export-credentials` line from prerequisites before any Terraform command.
-- **Only three public-access flags set.** All four must be true. Check `block_public_acls`, `block_public_policy`, `ignore_public_acls`, and `restrict_public_buckets`.
+- **StorageAccountAlreadyTaken.** Storage account names are globally unique. The `random_id` suffix prevents this. If you hardcoded a name, change it.
+- **Invalid storage account name.** Names must be 3 to 24 characters, lowercase letters and numbers only. No hyphens, no underscores. If you copied a naming convention from another cloud, that is why it failed.
+- **Diagnostic setting deploys but logs never arrive.** The setting must target the blob service (`.../blobServices/default`), not the storage account itself. Scope the target resource id to the sub-resource.
+- **Terraform cannot authenticate.** Run `az login` first, and if you have more than one subscription, set the right one with `az account set` before any Terraform command.
 
 That is brick one. Next week you write the policy that proves it, automatically, every time.
