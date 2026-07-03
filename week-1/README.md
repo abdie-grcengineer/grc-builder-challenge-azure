@@ -56,9 +56,9 @@ If you applied, also capture state and run the checks.
 
 - `terraform validate` passes.
 - `evidence/plan.json` contains all five controls: the encryption attestation, public access blocked on both accounts, versioning enabled, the four tags, and the diagnostic setting target.
-- If you applied, `verify.sh` shows encryption with Microsoft-managed keys, versioning enabled, and public blob access false.
+- If you applied, `verify.sh` shows encryption with Microsoft-managed keys, versioning enabled, public blob access false on both accounts, the four tags on every resource, and the diagnostic setting delivering the three Storage log categories.
 
-`verify.sh` in the starter runs the three live checks for you.
+`verify.sh` in the starter runs all five live checks for you. Notice that it audits both accounts and all three resources, not just the primary. A verification script only vouches for what it actually checks, and partial coverage passing is how gaps hide.
 
 ## Tear it down
 

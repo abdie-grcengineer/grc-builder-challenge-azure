@@ -24,12 +24,14 @@ terraform show -json tfplan > evidence/plan.json
 
 ## Done when
 
-Run `./verify.sh` after `terraform apply`, or just confirm `evidence/plan.json` contains the encryption attestation, public access blocked on both accounts, versioning enabled, the four tags, and the diagnostic setting.
+Run `./verify.sh` after `terraform apply`. It audits all five controls against live Azure: encryption key source, blob versioning, public access on both accounts, the four tags on all three resources, and the diagnostic setting with its log categories. A green run means what it says only because the coverage is complete; a check script that audits three of five controls will happily pass a half-built baseline.
+
+If you stayed plan-only, confirm `evidence/plan.json` contains the same five things: the encryption attestation, public access blocked on both accounts, versioning enabled, the four tags, and the diagnostic setting.
 
 ## Files
 
 - `main.tf`: provider, resource group, storage accounts, and the TODOs you complete
 - `variables.tf`: input variables (complete)
 - `outputs.tf`: outputs (the SC-28 attestation is yours to add)
-- `verify.sh`: post-apply control checks
+- `verify.sh`: post-apply audit of all five controls
 - `terraform.tfvars.example`: copy to `terraform.tfvars` and edit
